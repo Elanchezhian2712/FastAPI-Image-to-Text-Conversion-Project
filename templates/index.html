@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OCR Processing</title>
+    <style>
+        body {
+            display: flex;
+            margin: 0;
+            height: 100vh;
+        }
+        #left-side {
+            flex: 1;
+            padding: 20px;
+            background-color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        #right-side {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            box-shadow: -4px 0 6px rgba(0, 0, 0, 0.1);
+        }
+
+        #image-container {  
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: inline-block;
+            overflow: hidden;
+        }
+        /* #processed-image {
+            max-width: 100%;
+        } */
+        .selectable-box {
+            position: absolute;
+            border: 2px dashed red;
+            background-color: rgba(255, 0, 0, 0.2);
+            cursor: crosshair;
+        }
+        #cancel-button {
+            display: none;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        img {
+            user-drag: none; /* For most browsers */
+            -webkit-user-drag: none; /* For WebKit-based browsers */
+        }
+    </style>
+    <script>
+        let startX, startY, endX, endY;
+        let selectionBox;
+        let isSelecting = false;
+
+        function startSelection(event) {
+            if (event.ctrlKey) { // Check if Ctrl key is held down
+                if (isSelecting) return; // Prevent starting a new selection if already selecting
+
+                const imgElement = document.getElementById('processed-image');
+                if (!imgElement) return;
+
+                const rect = imgElement.getBoundingClientRect();
+                startX = event.clientX - rect.left;
+                startY = event.clientY - rect.top;
+
+                selectionBox = document.createElement('div');
+                selectionBox.className = 'selectable-box';
+                selectionBox.style.left = `${startX}px`;
+                selectionBox.style.top = `${startY}px`;
+                document.getElementById('image-container').appendChild(selectionBox);
+
+                isSelecting = true;
+                document.getElementById('cancel-button').style.display = 'inline';
+
+                document.addEventListener('mousemove', updateSelection);
+                document.addEventListener('mouseup', endSelection);
+            }
+        }
+
+        function updateSelection(event) {
+            if (!isSelecting) return;
+
+            const imgElement = document.getElementById('processed-image');
+            const rect = imgElement.getBoundingClientRect();
+            endX = event.clientX - rect.left;
+            endY = event.clientY - rect.top;
+
+            selectionBox.style.width = `${Math.abs(endX - startX)}px`;
+            selectionBox.style.height = `${Math.abs(endY - startY)}px`;
+            selectionBox.style.left = `${Math.min(startX, endX)}px`;
+            selectionBox.style.top = `${Math.min(startY, endY)}px`;
+        }
+
+        function endSelection(event) {
+            if (!isSelecting) return;
+
+            document.removeEventListener('mousemove', updateSelection);
+            document.removeEventListener('mouseup', endSelection);
+
+            const imgElement = document.getElementById('processed-image');
+            const rect = imgElement.getBoundingClientRect();
+            endX = event.clientX - rect.left;
+            endY = event.clientY - rect.top;
+
+            const x1 = Math.min(startX, endX);
+            const y1 = Math.min(startY, endY);
+            const x2 = Math.max(startX, endX);
+            const y2 = Math.max(startY, endY);
+
+            fetchText(x1, y1, x2, y2);
+
+            selectionBox.remove();
+            isSelecting = false;
+            document.getElementById('cancel-button').style.display = 'none';
+        }
+
+        function cancelSelection() {
+            if (isSelecting) {
+                selectionBox.remove();
+                document.removeEventListener('mousemove', updateSelection);
+                document.removeEventListener('mouseup', endSelection);
+                isSelecting = false;
+                document.getElementById('cancel-button').style.display = 'none';
+            }
+        }
+
+        function fetchText(x1, y1, x2, y2) {
+            const x1Int = Math.round(x1);
+            const y1Int = Math.round(y1);
+            const x2Int = Math.round(x2);
+            const y2Int = Math.round(y2);
+
+            fetch(`/get_text/?x1=${x1Int}&y1=${y1Int}&x2=${x2Int}&y2=${y2Int}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.text) {
+                        alert('Extracted Text: ' + data.text);
+                    } else {
+                        alert('Error extracting text');
+                    }
+                })
+                .catch(error => alert('An error occurred: ' + error));
+        }
+
+        // Bind startSelection to the image onload event to ensure it's loaded
+        function bindStartSelection() {
+            const imgElement = document.getElementById('processed-image');
+            if (imgElement) {
+                imgElement.addEventListener('mousedown', startSelection);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', bindStartSelection);
+    </script>
+</head>
+<body>
+    <div id="left-side">
+        <form>
+            <div class="form-group">
+                <label for="govt-rank">GOVT RANK</label>
+                <input type="text" id="govt-rank" name="govt-rank">
+            </div>
+            <div class="form-group">
+                <label for="application-number">APPLICATION NUMBER</label>
+                <input type="text" id="application-number" name="application-number">
+            </div>
+            <div class="form-group">
+                <label for="name">NAME OF THE CANDIDATE</label>
+                <input type="text" id="name" name="name">
+            </div>
+            <div class="form-group">
+                <label for="dob">DATE OF BIRTH</label>
+                <input type="date" id="dob" name="dob">
+            </div>
+            <div class="form-group">
+                <label for="aggregate-mark">AGGREGATE MARK</label>
+                <input type="text" id="aggregate-mark" name="aggregate-mark">
+            </div>
+            <div class="form-group">
+                <label for="community">COMMUNITY</label>
+                <input type="text" id="community" name="community">
+            </div>
+            <div class="form-group">
+                <label for="govt-community-rank">GOVT COMMUNITY RANK</label>
+                <input type="text" id="govt-community-rank" name="govt-community-rank">
+            </div>
+        </form>
+    </div>
+    <div id="right-side">
+        <h2>Upload Image for OCR Processing</h2>
+        <form action="/upload/" method="post" enctype="multipart/form-data">
+            <input type="file" name="file" accept="image/*" required>
+            <button type="submit">Upload</button>
+        </form>
+        {% if image_filename %}
+        <div id="image-container">
+            <img id="processed-image" src="/static/{{ image_filename }}" alt="Processed Image">
+        </div>
+        <button id="cancel-button" onclick="cancelSelection()">Cancel Selection</button>
+        {% endif %}
+    </div>
+</body>
+</html>
+

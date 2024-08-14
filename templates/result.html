@@ -1,0 +1,490 @@
+<!-- <!DOCTYPE html>
+<html>
+<head>
+    <title>Extracted Text and Processed Image</title>
+    <style>
+        .bounding-box {
+            position: absolute;
+            border: 2px solid green;
+            background-color: rgba(0, 255, 0, 0.3);
+            cursor: pointer;
+        }
+    </style>
+    <script>
+        function fetchText(x1, y1, x2, y2) {
+            fetch(`/get_text/?x1=${x1}&y1=${y1}&x2=${x2}&y2=${y2}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('text-result').innerText = data.text;
+                });
+        }
+        
+        function setupBoundingBoxes(boxes) {
+            const imgElement = document.getElementById('processed-image');
+            const imgWidth = imgElement.width;
+            const imgHeight = imgElement.height;
+
+            boxes.forEach(box => {
+                const [x1, y1, x2, y2] = box.box;
+                
+                const boundingBox = document.createElement('div');
+                boundingBox.className = 'bounding-box';
+                boundingBox.style.left = `${(x1 / imgWidth) * 100}%`;
+                boundingBox.style.top = `${(y1 / imgHeight) * 100}%`;
+                boundingBox.style.width = `${((x2 - x1) / imgWidth) * 100}%`;
+                boundingBox.style.height = `${((y2 - y1) / imgHeight) * 100}%`;
+                boundingBox.onclick = () => fetchText(x1, y1, x2, y2);
+                
+                document.getElementById('image-container').appendChild(boundingBox);
+            });
+        }
+
+        window.onload = function() {
+            const boundingBoxes = JSON.parse('{{ bounding_boxes|tojson }}');
+            setupBoundingBoxes(boundingBoxes);
+        }
+    </script>
+</head>
+<body>
+    <h2>Extracted Text and Processed Image</h2>
+    <div id="image-container" style="position: relative; display: inline-block;">
+        <img id="processed-image" src="/static/{{ image_filename }}" alt="Processed Image" style="max-width: 100%; height: auto;">
+    </div>
+    <h3>Extracted Text:</h3>
+    <pre id="text-result"></pre>
+    <br>
+    <a href="/">Upload Another Image</a>
+</body>
+</html> -->
+
+<!-- <!DOCTYPE html>
+<html>
+<head>
+    <title>Extracted Text and Processed Image</title>
+    <style>
+        .bounding-box {
+            position: absolute;
+            border: 2px solid green;
+            background-color: rgba(0, 255, 0, 0.3);
+        }
+    </style>
+    <script>
+        function fetchText(x1, y1, x2, y2) {
+            fetch(`/get_text/?x1=${x1}&y1=${y1}&x2=${x2}&y2=${y2}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('text-result').innerText = data.text;
+                });
+        }
+        
+        function setupBoundingBoxes(boxes) {
+            const imgElement = document.getElementById('processed-image');
+            const imgWidth = imgElement.width;
+            const imgHeight = imgElement.height;
+
+            boxes.forEach(box => {
+                const [x1, y1, x2, y2] = box.box;
+                
+                const boundingBox = document.createElement('div');
+                boundingBox.className = 'bounding-box';
+                boundingBox.style.left = `${(x1 / imgWidth) * 100}%`;
+                boundingBox.style.top = `${(y1 / imgHeight) * 100}%`;
+                boundingBox.style.width = `${((x2 - x1) / imgWidth) * 100}%`;
+                boundingBox.style.height = `${((y2 - y1) / imgHeight) * 100}%`;
+                boundingBox.onclick = () => fetchText(x1, y1, x2, y2);
+                
+                document.getElementById('image-container').appendChild(boundingBox);
+            });
+        }
+
+        window.onload = function() {
+            const boundingBoxes = JSON.parse('{{ bounding_boxes|tojson }}');
+            setupBoundingBoxes(boundingBoxes);
+        }
+    </script>
+</head>
+<body>
+    <h2>Extracted Text and Processed Image</h2>
+    <div id="image-container" style="position: relative; display: inline-block;">
+        <img id="processed-image" src="/static/{{ image_filename }}" alt="Processed Image" style="max-width: 100%; height: auto;">
+    </div>
+    <h3>Extracted Text:</h3>
+    <pre id="text-result"></pre>
+    <br>
+    <a href="/">Upload Another Image</a>
+</body>
+</html> -->
+
+
+<!-- <!DOCTYPE html>
+<html>
+<head>
+    <title>Extracted Text and Processed Image</title>
+    <style>
+        
+        #image-container {
+            position: relative;
+            display: inline-block;
+        }
+        .selectable-box {
+            position: absolute;
+            border: 2px dashed red;
+            background-color: rgba(255, 0, 0, 0.2);
+            cursor: crosshair;
+        }
+
+        #cancel-button {
+            display: none;
+        }
+    </style>
+    <script>
+        let startX, startY, endX, endY;
+        let selectionBox;
+        let isSelecting = false;
+
+        function startSelection(event) {
+            if (isSelecting) return;
+
+            const imgElement = document.getElementById('processed-image');
+            const rect = imgElement.getBoundingClientRect();
+            startX = event.clientX - rect.left;
+            startY = event.clientY - rect.top;
+
+            selectionBox = document.createElement('div');
+            selectionBox.className = 'selectable-box';
+            selectionBox.style.left = `${startX}px`;
+            selectionBox.style.top = `${startY}px`;
+            document.getElementById('image-container').appendChild(selectionBox);
+
+            isSelecting = true;
+            document.getElementById('cancel-button').style.display = 'inline'; 
+
+            document.addEventListener('mousemove', updateSelection);
+            document.addEventListener('mouseup', endSelection);
+        }
+
+        function updateSelection(event) {
+            const imgElement = document.getElementById('processed-image');
+            const rect = imgElement.getBoundingClientRect();
+            endX = event.clientX - rect.left;
+            endY = event.clientY - rect.top;
+
+            selectionBox.style.width = `${Math.abs(endX - startX)}px`;
+            selectionBox.style.height = `${Math.abs(endY - startY)}px`;
+            selectionBox.style.left = `${Math.min(startX, endX)}px`;
+            selectionBox.style.top = `${Math.min(startY, endY)}px`;
+        }
+
+        function endSelection(event) {
+            document.removeEventListener('mousemove', updateSelection);
+            document.removeEventListener('mouseup', endSelection);
+
+            if (!isSelecting) return;
+
+            const imgElement = document.getElementById('processed-image');
+            const rect = imgElement.getBoundingClientRect();
+            endX = event.clientX - rect.left;
+            endY = event.clientY - rect.top;
+
+            const x1 = Math.min(startX, endX);
+            const y1 = Math.min(startY, endY);
+            const x2 = Math.max(startX, endX);
+            const y2 = Math.max(startY, endY);
+
+            fetchText(x1, y1, x2, y2);
+
+            selectionBox.remove();
+            isSelecting = false;
+            document.getElementById('cancel-button').style.display = 'none';
+        }
+
+        function cancelSelection() {
+            if (isSelecting) {
+                selectionBox.remove();
+                document.removeEventListener('mousemove', updateSelection);
+                document.removeEventListener('mouseup', endSelection);
+                isSelecting = false;
+                document.getElementById('cancel-button').style.display = 'none'; 
+            }
+        }
+
+        function fetchText(x1, y1, x2, y2) {
+            // Convert coordinates to integers
+            const x1Int = Math.round(x1);
+            const y1Int = Math.round(y1);
+            const x2Int = Math.round(x2);
+            const y2Int = Math.round(y2);
+
+            fetch(`/get_text/?x1=${x1Int}&y1=${y1Int}&x2=${x2Int}&y2=${y2Int}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.text) {
+                        alert('Extracted Text: ' + data.text);
+                    } else {
+                        alert('Error extracting text');
+                    }
+                })
+                .catch(error => alert('An error occurred: ' + error));
+        }
+    </script>
+</head>
+<body>
+    <h2>Processed Image with Bounding Boxes</h2>
+    
+    <div id="image-container">
+        <img id="processed-image" src="/static/{{ image_filename }}" alt="Processed Image" onclick="startSelection(event)">
+    </div>
+    <button id="cancel-button" onclick="cancelSelection()">Cancel Selection</button>
+</body>
+</html> -->
+
+<!-- <!DOCTYPE html>
+<html>
+<head>
+    <title>Extracted Text and Processed Image</title>
+    <style>
+        
+        #image-container {
+            position: relative;
+            display: inline-block;
+        }
+        .selectable-box {
+            position: absolute;
+            border: 2px dashed red;
+            background-color: rgba(255, 0, 0, 0.2);
+            cursor: crosshair;
+        }
+
+        #cancel-button {
+            display: none;
+        }
+    </style>
+    <script>
+        let startX, startY, endX, endY;
+        let selectionBox;
+        let isSelecting = false;
+
+        function startSelection(event) {
+            if (isSelecting) return;
+
+            const imgElement = document.getElementById('processed-image');
+            const rect = imgElement.getBoundingClientRect();
+            startX = event.clientX - rect.left;
+            startY = event.clientY - rect.top;
+
+            selectionBox = document.createElement('div');
+            selectionBox.className = 'selectable-box';
+            selectionBox.style.left = `${startX}px`;
+            selectionBox.style.top = `${startY}px`;
+            document.getElementById('image-container').appendChild(selectionBox);
+
+            isSelecting = true;
+            document.getElementById('cancel-button').style.display = 'inline'; 
+
+            document.addEventListener('mousemove', updateSelection);
+            document.addEventListener('mouseup', endSelection);
+        }
+
+        function updateSelection(event) {
+            const imgElement = document.getElementById('processed-image');
+            const rect = imgElement.getBoundingClientRect();
+            endX = event.clientX - rect.left;
+            endY = event.clientY - rect.top;
+
+            selectionBox.style.width = `${Math.abs(endX - startX)}px`;
+            selectionBox.style.height = `${Math.abs(endY - startY)}px`;
+            selectionBox.style.left = `${Math.min(startX, endX)}px`;
+            selectionBox.style.top = `${Math.min(startY, endY)}px`;
+        }
+
+        function endSelection(event) {
+            document.removeEventListener('mousemove', updateSelection);
+            document.removeEventListener('mouseup', endSelection);
+
+            if (!isSelecting) return;
+
+            const imgElement = document.getElementById('processed-image');
+            const rect = imgElement.getBoundingClientRect();
+            endX = event.clientX - rect.left;
+            endY = event.clientY - rect.top;
+
+            const x1 = Math.min(startX, endX);
+            const y1 = Math.min(startY, endY);
+            const x2 = Math.max(startX, endX);
+            const y2 = Math.max(startY, endY);
+
+            fetchText(x1, y1, x2, y2);
+
+            selectionBox.remove();
+            isSelecting = false;
+            document.getElementById('cancel-button').style.display = 'none';
+        }
+
+        function cancelSelection() {
+            if (isSelecting) {
+                selectionBox.remove();
+                document.removeEventListener('mousemove', updateSelection);
+                document.removeEventListener('mouseup', endSelection);
+                isSelecting = false;
+                document.getElementById('cancel-button').style.display = 'none'; 
+            }
+        }
+
+        function fetchText(x1, y1, x2, y2) {
+            // Convert coordinates to integers
+            const x1Int = Math.round(x1);
+            const y1Int = Math.round(y1);
+            const x2Int = Math.round(x2);
+            const y2Int = Math.round(y2);
+
+            fetch(`/get_text/?x1=${x1Int}&y1=${y1Int}&x2=${x2Int}&y2=${y2Int}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.text) {
+                        alert('Extracted Text: ' + data.text);
+                    } else {
+                        alert('Error extracting text');
+                    }
+                })
+                .catch(error => alert('An error occurred: ' + error));
+        }
+    </script>
+</head>
+<body>
+    <h2>Processed Image with Bounding Boxes</h2>
+    
+    <div id="image-container">
+        <img id="processed-image" src="/static/{{ image_filename }}" alt="Processed Image" onclick="startSelection(event)">
+    </div>
+    <button id="cancel-button" onclick="cancelSelection()">Cancel Selection</button>
+</body>
+</html> -->
+
+<!-- <!DOCTYPE html>
+<html>
+<head>
+    <title>OCR Image Upload and Text Extraction</title>
+    <style>
+        #image-container {
+            position: relative;
+            display: inline-block;
+        }
+        .selectable-box {
+            position: absolute;
+            border: 2px dashed red;
+            background-color: rgba(255, 0, 0, 0.2);
+            cursor: crosshair;
+        }
+        #cancel-button {
+            display: none;
+        }
+    </style>
+    <script>
+        let startX, startY, endX, endY;
+        let selectionBox;
+        let isSelecting = false;
+
+        function startSelection(event) {
+            if (isSelecting) return;
+
+            const imgElement = document.getElementById('processed-image');
+            const rect = imgElement.getBoundingClientRect();
+            startX = event.clientX - rect.left;
+            startY = event.clientY - rect.top;
+
+            selectionBox = document.createElement('div');
+            selectionBox.className = 'selectable-box';
+            selectionBox.style.left = `${startX}px`;
+            selectionBox.style.top = `${startY}px`;
+            document.getElementById('image-container').appendChild(selectionBox);
+
+            isSelecting = true;
+            document.getElementById('cancel-button').style.display = 'inline'; 
+
+            document.addEventListener('mousemove', updateSelection);
+            document.addEventListener('mouseup', endSelection);
+        }
+
+        function updateSelection(event) {
+            const imgElement = document.getElementById('processed-image');
+            const rect = imgElement.getBoundingClientRect();
+            endX = event.clientX - rect.left;
+            endY = event.clientY - rect.top;
+
+            selectionBox.style.width = `${Math.abs(endX - startX)}px`;
+            selectionBox.style.height = `${Math.abs(endY - startY)}px`;
+            selectionBox.style.left = `${Math.min(startX, endX)}px`;
+            selectionBox.style.top = `${Math.min(startY, endY)}px`;
+        }
+
+        function endSelection(event) {
+            document.removeEventListener('mousemove', updateSelection);
+            document.removeEventListener('mouseup', endSelection);
+
+            if (!isSelecting) return;
+
+            const imgElement = document.getElementById('processed-image');
+            const rect = imgElement.getBoundingClientRect();
+            endX = event.clientX - rect.left;
+            endY = event.clientY - rect.top;
+
+            const x1 = Math.min(startX, endX);
+            const y1 = Math.min(startY, endY);
+            const x2 = Math.max(startX, endX);
+            const y2 = Math.max(startY, endY);
+
+            fetchText(x1, y1, x2, y2);
+
+            selectionBox.remove();
+            isSelecting = false;
+            document.getElementById('cancel-button').style.display = 'none';
+        }
+
+        function cancelSelection() {
+            if (isSelecting) {
+                selectionBox.remove();
+                document.removeEventListener('mousemove', updateSelection);
+                document.removeEventListener('mouseup', endSelection);
+                isSelecting = false;
+                document.getElementById('cancel-button').style.display = 'none'; 
+            }
+        }
+
+        function fetchText(x1, y1, x2, y2) {
+            // Convert coordinates to integers
+            const x1Int = Math.round(x1);
+            const y1Int = Math.round(y1);
+            const x2Int = Math.round(x2);
+            const y2Int = Math.round(y2);
+
+            fetch(`/get_text/?x1=${x1Int}&y1=${y1Int}&x2=${x2Int}&y2=${y2Int}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.text) {
+                        alert('Extracted Text: ' + data.text);
+                    } else {
+                        alert('Error extracting text');
+                    }
+                })
+                .catch(error => alert('An error occurred: ' + error));
+        }
+    </script>
+</head>
+<body>
+    <h2>Upload Image for OCR Processing</h2>
+    <form action="/upload/" method="post" enctype="multipart/form-data">
+        <input type="file" name="file" accept="image/*" required>
+        <button type="submit">Upload</button>
+    </form>
+
+    {% if image_filename %}
+    <h2>Processed Image with Bounding Boxes</h2>
+    
+    <div id="image-container">
+        <img id="processed-image" src="/static/{{ image_filename }}" alt="Processed Image" onclick="startSelection(event)">
+    </div>
+    <button id="cancel-button" onclick="cancelSelection()">Cancel Selection</button>
+    {% endif %}
+</body>
+</html>
+                     -->
