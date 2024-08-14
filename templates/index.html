@@ -32,9 +32,6 @@
             display: inline-block;
             overflow: hidden;
         }
-        /* #processed-image {
-            max-width: 100%;
-        } */
         .selectable-box {
             position: absolute;
             border: 2px dashed red;
@@ -68,9 +65,19 @@
         let selectionBox;
         let isSelecting = false;
 
+        const fieldMapping = {
+            "GOVT RANK": "govt-rank",
+            "APPLICATION NUMBER": "application-number",
+            "NAME OF THE CANDIDATE": "name",
+            "DATE OF BIRTH": "dob",
+            "AGGREGATE MARK": "aggregate-mark",
+            "COMMUNITY": "community",
+            "GOVT COMMUNITY RANK": "govt-community-rank"
+        };
+
         function startSelection(event) {
-            if (event.ctrlKey) { // Check if Ctrl key is held down
-                if (isSelecting) return; // Prevent starting a new selection if already selecting
+            if (event.ctrlKey) {
+                if (isSelecting) return;
 
                 const imgElement = document.getElementById('processed-image');
                 if (!imgElement) return;
@@ -150,13 +157,56 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.text) {
-                        alert('Extracted Text: ' + data.text);
+                        console.log('Extracted Text:', data.text);
+                        autoFillField(data.text);
                     } else {
                         alert('Error extracting text');
                     }
                 })
                 .catch(error => alert('An error occurred: ' + error));
         }
+
+        function autoFillField(extractedText) {
+    // Normalize extracted text
+    const normalizedText = extractedText.trim().toUpperCase().replace(/\|/g, ''); // Remove pipe characters
+    console.log('Normalized Text:', normalizedText); // Debugging line
+
+    // Check for specific keywords or patterns
+    if (normalizedText.includes("GOVT RANK")) {
+        // Assuming the next text after "GOVT RANK" is the actual rank
+        document.getElementById("govt-rank").value = extractedText; // Fill GOVT RANK
+        console.log(`Filling GOVT RANK with: ${extractedText}`);
+    } else if (normalizedText.includes("APPLICATION NUMBER")) {
+        // Assuming the next text after "APPLICATION NUMBER" is the actual number
+        document.getElementById("application-number").value = extractedText; // Fill APPLICATION NUMBER
+        console.log(`Filling APPLICATION NUMBER with: ${extractedText}`);
+    } else if (normalizedText.match(/^[A-Z\s]+$/) && normalizedText.length > 2) {
+        // Check if it's a valid name (more than 2 characters)
+        document.getElementById("name").value = extractedText; // Fill NAME OF THE CANDIDATE
+        console.log(`Filling NAME with: ${extractedText}`);
+    } else if (normalizedText.match(/^\d{2}-\d{2}-\d{4}$/)) {
+        // Convert date from DD-MM-YYYY to YYYY-MM-DD
+        const parts = normalizedText.split("-");
+        const formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`; // Convert to YYYY-MM-DD
+        document.getElementById("dob").value = formattedDate; // Fill DATE OF BIRTH
+        console.log(`Filling DATE OF BIRTH with: ${formattedDate}`);
+    } else if (normalizedText.match(/^\d+$/)) {
+        // Handle numeric values for aggregate marks
+        if (document.getElementById("aggregate-mark").value === "") {
+            // Only fill if AGGREGATE MARK field is empty
+            document.getElementById("aggregate-mark").value = normalizedText; // Fill AGGREGATE MARK
+            console.log(`Filling AGGREGATE MARK with: ${normalizedText}`);
+        }
+    } else if (normalizedText.includes("COMMUNITY") || normalizedText === "MBC") {
+        document.getElementById("community").value = extractedText; // Fill COMMUNITY
+        console.log(`Filling COMMUNITY with: ${extractedText}`);
+    } else if (normalizedText.includes("GOVT COMMUNITY RANK")) {
+        document.getElementById("govt-community-rank").value = extractedText; // Fill GOVT COMMUNITY RANK
+        console.log(`Filling GOVT COMMUNITY RANK with: ${extractedText}`);
+    } else {
+        console.log("No matching field found for:", normalizedText); // Debugging line
+    }
+}
 
         // Bind startSelection to the image onload event to ensure it's loaded
         function bindStartSelection() {
@@ -217,4 +267,3 @@
     </div>
 </body>
 </html>
-
