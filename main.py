@@ -138,7 +138,7 @@ def submit_data(
     except Exception as e:
         return {"error": str(e)}
 
-# Run the application
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+# # Run the application
+# if __name__ == "__main__":
+#     import uvicorn
+#     uvicorn.run(app, host="0.0.0.0", port=8000)
