@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>OCR Processing</title>
     <style>
@@ -8,6 +9,7 @@
             margin: 0;
             height: 100vh;
         }
+
         #left-side {
             flex: 1;
             padding: 20px;
@@ -16,6 +18,7 @@
             flex-direction: column;
             justify-content: center;
         }
+
         #right-side {
             flex: 2;
             display: flex;
@@ -25,54 +28,63 @@
             box-shadow: -4px 0 6px rgba(0, 0, 0, 0.1);
         }
 
-        #image-container {  
+        #image-container {
             position: relative;
             width: 100%;
             height: 100%;
             display: inline-block;
             overflow: hidden;
         }
+
         .selectable-box {
             position: absolute;
             border: 2px dashed red;
             background-color: rgba(255, 0, 0, 0.2);
             cursor: crosshair;
         }
+
         #cancel-button {
             display: none;
         }
+
         .form-group {
             margin-bottom: 15px;
         }
+
         .form-group label {
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
         }
+
         .form-group input {
             width: 100%;
             padding: 8px;
             border: 1px solid #ccc;
             border-radius: 4px;
         }
+
         img {
-            user-drag: none; /* For most browsers */
-            -webkit-user-drag: none; /* For WebKit-based browsers */
+            user-drag: none;
+            /* For most browsers */
+            -webkit-user-drag: none;
+            /* For WebKit-based browsers */
         }
     </style>
     <script>
         let startX, startY, endX, endY;
         let selectionBox;
         let isSelecting = false;
+        let selectedField = '';
 
         const fieldMapping = {
-            "GOVT RANK": "govt-rank",
-            "APPLICATION NUMBER": "application-number",
+            "GOVT RANK": "govt_rank",
+            "APPLICATION NUMBER": "application_number",
             "NAME OF THE CANDIDATE": "name",
             "DATE OF BIRTH": "dob",
-            "AGGREGATE MARK": "aggregate-mark",
+            "AGGREGATE MARK": "aggregate_mark",
             "COMMUNITY": "community",
-            "GOVT COMMUNITY RANK": "govt-community-rank"
+            "GOVT COMMUNITY RANK": "govt_community_rank"
         };
 
         function startSelection(event) {
@@ -167,48 +179,50 @@
         }
 
         function autoFillField(extractedText) {
-    // Normalize extracted text
-    const normalizedText = extractedText.trim().toUpperCase().replace(/\|/g, ''); // Remove pipe characters
-    console.log('Normalized Text:', normalizedText); // Debugging line
+            if (!selectedField) {
+                console.log("No field selected.");
+                return;
+            }
 
-    // Check for specific keywords or patterns
-    if (normalizedText.includes("GOVT RANK")) {
-        // Assuming the next text after "GOVT RANK" is the actual rank
-        document.getElementById("govt-rank").value = extractedText; // Fill GOVT RANK
-        console.log(`Filling GOVT RANK with: ${extractedText}`);
-    } else if (normalizedText.includes("APPLICATION NUMBER")) {
-        // Assuming the next text after "APPLICATION NUMBER" is the actual number
-        document.getElementById("application-number").value = extractedText; // Fill APPLICATION NUMBER
-        console.log(`Filling APPLICATION NUMBER with: ${extractedText}`);
-    } else if (normalizedText.match(/^[A-Z\s]+$/) && normalizedText.length > 2) {
-        // Check if it's a valid name (more than 2 characters)
-        document.getElementById("name").value = extractedText; // Fill NAME OF THE CANDIDATE
-        console.log(`Filling NAME with: ${extractedText}`);
-    } else if (normalizedText.match(/^\d{2}-\d{2}-\d{4}$/)) {
-        // Convert date from DD-MM-YYYY to YYYY-MM-DD
-        const parts = normalizedText.split("-");
-        const formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`; // Convert to YYYY-MM-DD
-        document.getElementById("dob").value = formattedDate; // Fill DATE OF BIRTH
-        console.log(`Filling DATE OF BIRTH with: ${formattedDate}`);
-    } else if (normalizedText.match(/^\d+$/)) {
-        // Handle numeric values for aggregate marks
-        if (document.getElementById("aggregate-mark").value === "") {
-            // Only fill if AGGREGATE MARK field is empty
-            document.getElementById("aggregate-mark").value = normalizedText; // Fill AGGREGATE MARK
-            console.log(`Filling AGGREGATE MARK with: ${normalizedText}`);
+            const fieldId = fieldMapping[selectedField];
+            if (fieldId) {
+                const inputElement = document.getElementById(fieldId);
+                if (inputElement) {
+                    let value = extractedText.trim().toUpperCase().replace(/\|/g, ''); // Remove pipe characters
+
+                    // Convert date format if needed
+                    if (fieldId === 'dob') {
+                        value = convertDateFormat(value);
+                    }
+
+                    inputElement.value = value;
+                } else {
+                    console.log("No matching input field found for ID:", fieldId);
+                }
+            } else {
+                console.log("Selected field not found in mapping:", selectedField);
+            }
         }
-    } else if (normalizedText.includes("COMMUNITY") || normalizedText === "MBC") {
-        document.getElementById("community").value = extractedText; // Fill COMMUNITY
-        console.log(`Filling COMMUNITY with: ${extractedText}`);
-    } else if (normalizedText.includes("GOVT COMMUNITY RANK")) {
-        document.getElementById("govt-community-rank").value = extractedText; // Fill GOVT COMMUNITY RANK
-        console.log(`Filling GOVT COMMUNITY RANK with: ${extractedText}`);
-    } else {
-        console.log("No matching field found for:", normalizedText); // Debugging line
-    }
-}
+        async function handleFormSubmit(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const response = await fetch('/upload/', {
+                method: 'POST',
+                body: formData
+            });
+        }
 
-        // Bind startSelection to the image onload event to ensure it's loaded
+        function convertDateFormat(dateStr) {
+            const parts = dateStr.split('-');
+            if (parts.length === 3) {
+                const day = parts[0];
+                const month = parts[1];
+                const year = parts[2];
+                return `${year}-${month}-${day}`;
+            }
+            return dateStr; // Return original if format is unexpected
+        }
+
         function bindStartSelection() {
             const imgElement = document.getElementById('processed-image');
             if (imgElement) {
@@ -216,41 +230,67 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', bindStartSelection);
+        document.addEventListener('DOMContentLoaded', () => {
+            bindStartSelection();
+
+            // Set up the dropdown to select a field
+            const fieldSelect = document.getElementById('field-select');
+            if (fieldSelect) {
+                fieldSelect.addEventListener('change', (event) => {
+                    selectedField = event.target.value;
+                });
+            }
+        });
     </script>
 </head>
+
 <body>
     <div id="left-side">
-        <form>
+        <form id="dataForm" action="/submit_data/" method="post">
+            <div class="form-group">
+                <label for="field-select">Select Field</label>
+                <select id="field-select" name="field-select">
+                    <option value="">--Select Field--</option>
+                    <option value="GOVT RANK">GOVT RANK</option>
+                    <option value="APPLICATION NUMBER">APPLICATION NUMBER</option>
+                    <option value="NAME OF THE CANDIDATE">NAME OF THE CANDIDATE</option>
+                    <option value="DATE OF BIRTH">DATE OF BIRTH</option>
+                    <option value="AGGREGATE MARK">AGGREGATE MARK</option>
+                    <option value="COMMUNITY">COMMUNITY</option>
+                    <option value="GOVT COMMUNITY RANK">GOVT COMMUNITY RANK</option>
+                </select>
+            </div>
             <div class="form-group">
                 <label for="govt-rank">GOVT RANK</label>
-                <input type="text" id="govt-rank" name="govt-rank">
+                <input type="text" id="govt_rank" name="govt_rank" required>
             </div>
             <div class="form-group">
                 <label for="application-number">APPLICATION NUMBER</label>
-                <input type="text" id="application-number" name="application-number">
+                <input type="text" id="application_number" name="application_number" required>
             </div>
             <div class="form-group">
                 <label for="name">NAME OF THE CANDIDATE</label>
-                <input type="text" id="name" name="name">
+                <input type="text" id="name" name="name" required>
             </div>
             <div class="form-group">
                 <label for="dob">DATE OF BIRTH</label>
-                <input type="date" id="dob" name="dob">
+                <input type="date" id="dob" name="dob" required>
             </div>
             <div class="form-group">
                 <label for="aggregate-mark">AGGREGATE MARK</label>
-                <input type="text" id="aggregate-mark" name="aggregate-mark">
+                <input type="text" id="aggregate_mark" name="aggregate_mark" required>
             </div>
             <div class="form-group">
                 <label for="community">COMMUNITY</label>
-                <input type="text" id="community" name="community">
+                <input type="text" id="community" name="community" required>
             </div>
             <div class="form-group">
                 <label for="govt-community-rank">GOVT COMMUNITY RANK</label>
-                <input type="text" id="govt-community-rank" name="govt-community-rank">
+                <input type="text" id="govt_community_rank" name="govt_community_rank" required>
             </div>
+            <button type="submit">Submit</button>
         </form>
+      
     </div>
     <div id="right-side">
         <h2>Upload Image for OCR Processing</h2>
@@ -262,8 +302,9 @@
         <div id="image-container">
             <img id="processed-image" src="/static/{{ image_filename }}" alt="Processed Image">
         </div>
-        <button id="cancel-button" onclick="cancelSelection()">Cancel Selection</button>
+        <button id="cancel-button" onclick="cancelSelection()"></button>
         {% endif %}
     </div>
 </body>
+
 </html>
