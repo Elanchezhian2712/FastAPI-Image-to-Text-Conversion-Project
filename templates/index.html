@@ -203,14 +203,6 @@
                 console.log("Selected field not found in mapping:", selectedField);
             }
         }
-        async function handleFormSubmit(event) {
-            event.preventDefault();
-            const formData = new FormData(event.target);
-            const response = await fetch('/upload/', {
-                method: 'POST',
-                body: formData
-            });
-        }
 
         function convertDateFormat(dateStr) {
             const parts = dateStr.split('-');
@@ -250,7 +242,7 @@
             <div class="form-group">
                 <label for="field-select">Select Field</label>
                 <select id="field-select" name="field-select">
-                    <option value="">--Select Field--</option>
+                    <option value="">Select Field</option>
                     <option value="GOVT RANK">GOVT RANK</option>
                     <option value="APPLICATION NUMBER">APPLICATION NUMBER</option>
                     <option value="NAME OF THE CANDIDATE">NAME OF THE CANDIDATE</option>
@@ -306,5 +298,3 @@
         {% endif %}
     </div>
 </body>
-
-</html>

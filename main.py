@@ -9,9 +9,11 @@ from PIL import Image
 import io
 import os
 from datetime import datetime
-from database import SessionLocal  # Make sure this is correctly set up
-from models import CandidateData  # Ensure this model is defined correctly
 from sqlalchemy.orm import Session
+
+from src.crud import create_candidate_data
+from src.database import SessionLocal  
+from src.models import CandidateData 
 
 # Database dependency
 def get_db():
@@ -129,23 +131,13 @@ def submit_data(
     try:
         dob_date = datetime.strptime(dob, "%Y-%m-%d").date()
 
-        new_data = CandidateData(
-            govt_rank=govt_rank,
-            application_number=application_number,
-            name=name,
-            dob=dob_date,
-            aggregate_mark=aggregate_mark,
-            community=community,
-            govt_community_rank=govt_community_rank
-        )
+        # Call the CRUD function to create the new data
+        create_candidate_data(db, govt_rank, application_number, name, dob_date, aggregate_mark, community, govt_community_rank)
 
-        db.add(new_data)
-        db.commit()  # Synchronous commit
         return {"message": "Data submitted successfully!"}
     except Exception as e:
-        db.rollback()  # Synchronous rollback in case of error
-        print(f"Error submitting data: {str(e)}")  # Log the error
         return {"error": str(e)}
+
 # Run the application
 if __name__ == "__main__":
     import uvicorn
