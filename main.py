@@ -305,27 +305,28 @@ async def upload_image(file: UploadFile = File(...)):
 
         # Extract text with bounding boxes
         extracted_text = []
+        boxes = []
         for i in range(len(details['text'])):
             if int(details['conf'][i]) > 0 and details['text'][i].strip():
-                extracted_text.append(details['text'][i].strip())
+                text = details['text'][i].strip()
+                extracted_text.append(text)
+                (x, y, w, h) = (details['left'][i], details['top'][i], details['width'][i], details['height'][i])
+                boxes.append((x, y, x + w, y + h, text))
 
         # Save the uploaded image for display
         image_filename = "uploaded_image.png"
         image_path = os.path.join("static", image_filename)
         image.save(image_path)
 
-        # Join all extracted text into a single string
-        extracted_text_str = " ".join(extracted_text)
-
-        # Return the template with the uploaded image and extracted text
+        # Render the result page with the extracted text and bounding boxes
         return templates.TemplateResponse("index.html", {
             "request": {},
             "image_filename": image_filename,
-            "extracted_text": extracted_text_str
+            "boxes": boxes
         })
 
     except Exception as e:
-        return HTMLResponse(content=f"An error occurred: {e}", status_code=500)
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
 
 @app.get("/get_text/")
 async def get_text(x1: int, y1: int, x2: int, y2: int):
