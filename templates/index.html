@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
@@ -54,7 +54,6 @@
             </div>
             <button class="btn" type="submit">Submit</button>
         </form>
-      
     </div>
     <div id="right-side">
         <h2>Upload Image for OCR Processing</h2>
@@ -67,7 +66,6 @@
             <img id="processed-image" src="/static/{{ image_filename }}" alt="Processed Image">
             <div id="cancel-button" onclick="cancelSelection()">Cancel Selection</div>
         </div>
-        <button id="cancel-button" onclick="cancelSelection()"></button>
         {% endif %}
     </div>
     <script src="/static/scripts.js"></script>
