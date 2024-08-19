@@ -42,15 +42,15 @@ run.bat
 
 
 # Features
-Image Upload: Easily upload images through the web interface.
-OCR Text Extraction: Automatically convert images to text using OCR technology.
-Interactive Text Editing: Drag and select text from the image for precise extraction.
-Data Submission: Submit extracted text to a database with associated input labels.
-Database Integration: Uses Subase for managing and storing extracted text data.
+   1. Image Upload: Easily upload images through the web interface.
+   2. OCR Text Extraction: Automatically convert images to text using OCR technology.
+   3. Interactive Text Editing: Drag and select text from the image for precise extraction.
+   4. Data Submission: Submit extracted text to a database with associated input labels.
+   5. Database Integration: Uses Subase for managing and storing extracted text data.
 
 # Technologies Used
-FastAPI: High-performance web framework for building APIs.
-OCR: Optical Character Recognition for text extraction.
-HTML/CSS/JavaScript: Frontend technologies for creating the web interface.
-Subase: Database management system for storing extracted data.
+   1. FastAPI: High-performance web framework for building APIs.
+   2. OCR: Optical Character Recognition for text extraction.
+   3. HTML/CSS/JavaScript: Frontend technologies for creating the web interface.
+   4. Subase: Database management system for storing extracted data.
 
