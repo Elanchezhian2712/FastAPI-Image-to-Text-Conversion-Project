@@ -6,14 +6,13 @@ This repository contains a FastAPI project structure along with environment setu
 
 demo/
 │
-├── main.py
-├── src/
-│   ├── crud.py
-│   ├── database.py
-│   └── models.py
-├── run.bat
-└── env/
-
+├── main.py # Main FastAPI application entry point
+├── src/ # Source code directory
+│ ├── crud.py # CRUD operations
+│ ├── database.py # Database configurations
+│ └── models.py # Database models
+├── run.bat # Batch script to run the application
+└── env/ # Virtual environment directory
 
 ## Setup Instructions
 
@@ -31,7 +30,4 @@ pip install -r req.txt
 run.bat
 
 
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
