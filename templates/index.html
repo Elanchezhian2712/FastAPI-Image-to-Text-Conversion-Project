@@ -1,74 +1,165 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OCR Processing</title>
-    <link href="/static/styles.css" rel="stylesheet">
+    <title>Image Upload and Data Entry</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        async function handleFormSubmit(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const response = await fetch('/upload/', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            
+            if (response.ok) {
+                // Convert Excel data to a binary array
+                const binaryString = atob(result.excel_data);
+                const workbook = XLSX.read(binaryString, { type: 'binary' });
+                const sheetName = workbook.SheetNames[0];
+                const sheet = workbook.Sheets[sheetName];
+                const html = XLSX.utils.sheet_to_html(sheet);
+
+                // Display the Excel data on the page
+                const resultDiv = document.getElementById('result');
+                resultDiv.innerHTML = html;
+                resultDiv.classList.remove('hidden');
+                document.getElementById('message').textContent = ''; // Clear any previous messages
+
+                // Add event listeners to table rows
+                document.querySelectorAll('#result table tr').forEach(row => {
+                    row.addEventListener('click', () => {
+                        populateForm(row);
+                    });
+                });
+            } else {
+                document.getElementById('message').textContent = result.error || 'An error occurred';
+                document.getElementById('result').classList.add('hidden');
+            }
+        }
+
+        function populateForm(row) {
+            const cells = row.querySelectorAll('td');
+            if (cells.length >= 7) {
+                document.getElementById('govt_rank').value = cells[0].textContent.trim();
+                document.getElementById('application_number').value = cells[1].textContent.trim();
+                document.getElementById('name').value = cells[2].textContent.trim();
+                document.getElementById('dob').value = cells[3].textContent.trim();
+                document.getElementById('aggregate_mark').value = cells[4].textContent.trim();
+                document.getElementById('community').value = cells[5].textContent.trim();
+                document.getElementById('govt_community_rank').value = cells[6].textContent.trim();
+            }
+        }
+    </script>
+    <style>
+        body {
+            display: flex;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+        }
+        .container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+        .left-section {
+            width: 40%;
+            padding: 20px;
+            box-sizing: border-box;
+            border-right: 1px solid #ddd;
+            background-color: #fff;
+        }
+        .right-section {
+            width: 60%;
+            padding: 20px;
+            box-sizing: border-box;
+            background-color: #fff;
+            border-left: 1px solid #ddd;
+        }
+        h1 {
+            margin-top: 0;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        input[type="file"], input[type="text"] {
+            margin-bottom: 10px;
+            width: calc(100% - 22px);
+            padding: 8px;
+            font-size: 16px;
+        }
+        button {
+            padding: 8px 16px;
+            font-size: 16px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            cursor: pointer;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
 </head>
-
 <body>
-    <div id="left-side">
-        <form id="dataForm" action="/submit_data/" method="post">
-            <div class="form-group">
-                <label for="field-select">Select Field</label>
-                <select id="field-select" name="field-select">
-                    <option value="">Select Field</option>
-                    <option value="GOVT RANK">GOVT RANK</option>
-                    <option value="APPLICATION NUMBER">APPLICATION NUMBER</option>
-                    <option value="NAME OF THE CANDIDATE">NAME OF THE CANDIDATE</option>
-                    <option value="DATE OF BIRTH">DATE OF BIRTH</option>
-                    <option value="AGGREGATE MARK">AGGREGATE MARK</option>
-                    <option value="COMMUNITY">COMMUNITY</option>
-                    <option value="GOVT COMMUNITY RANK">GOVT COMMUNITY RANK</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="govt_rank">GOVT RANK</label>
-                <input type="text" id="govt_rank" name="govt_rank" required>
-            </div>
-            <div class="form-group">
-                <label for="application_number">APPLICATION NUMBER</label>
-                <input type="text" id="application_number" name="application_number" required>
-            </div>
-            <div class="form-group">
-                <label for="name">NAME OF THE CANDIDATE</label>
-                <input type="text" id="name" name="name" required>
-            </div>
-            <div class="form-group">
-                <label for="dob">DATE OF BIRTH</label>
-                <input type="date" id="dob" name="dob" required>
-            </div>
-            <div class="form-group">
-                <label for="aggregate_mark">AGGREGATE MARK</label>
-                <input type="text" id="aggregate_mark" name="aggregate_mark" required>
-            </div>
-            <div class="form-group">
-                <label for="community">COMMUNITY</label>
-                <input type="text" id="community" name="community" required>
-            </div>
-            <div class="form-group">
-                <label for="govt_community_rank">GOVT COMMUNITY RANK</label>
-                <input type="text" id="govt_community_rank" name="govt_community_rank" required>
-            </div>
-            <button class="btn" type="submit">Submit</button>
-        </form>
-    </div>
-    <div id="right-side">
-        <h2>Upload Image for OCR Processing</h2>
-        <form action="/upload/" method="post" enctype="multipart/form-data">
-            <input type="file" name="file" accept="image/*" required>
-            <button type="submit">Upload</button>
-        </form>
-        {% if image_filename %}
-        <div id="image-container">
-            <img id="processed-image" src="/static/{{ image_filename }}" alt="Processed Image">
-            <div id="cancel-button" onclick="cancelSelection()">Cancel Selection</div>
-        </div>
-        {% endif %}
-    </div>
-    <script src="/static/scripts.js"></script>
-</body>
+    <div class="container">
+        <!-- Left Section with Data Entry Form -->
+        <div class="left-section">
+            <h1>Enter Data</h1>
+            <form id="dataForm" action="/submit_data/" method="post">
+                <label for="govt_rank">GOVT RANK:</label>
+                <input type="text" id="govt_rank" name="govt_rank" required><br>
 
+                <label for="application_number">APPLICATION NUMBER:</label>
+                <input type="text" id="application_number" name="application_number" required><br>
+
+                <label for="name">NAME OF THE CANDIDATE:</label>
+                <input type="text" id="name" name="name" required><br>
+
+                <label for="dob">DATE OF BIRTH:</label>
+                <input type="text" id="dob" name="dob" required><br>
+
+                <label for="aggregate_mark">AGGREGATE MARK:</label>
+                <input type="text" id="aggregate_mark" name="aggregate_mark" required><br>
+
+                <label for="community">COMMUNITY:</label>
+                <input type="text" id="community" name="community" required><br>
+
+                <label for="govt_community_rank">GOVT COMMUNITY RANK:</label>
+                <input type="text" id="govt_community_rank" name="govt_community_rank" required><br>
+                <button type="submit">Submit Data</button>
+            </form>
+        </div>
+
+        <!-- Right Section with Image Upload and Result Display -->
+        <div class="right-section">
+            <h1>Upload an Image for Processing</h1>
+            <form id="uploadForm" action="/upload/" method="post" enctype="multipart/form-data" onsubmit="handleFormSubmit(event)">
+                <input type="file" name="file" accept="image/*" required>
+                <button type="submit">Upload</button>
+            </form>
+            <div id="message"></div>
+            <div id="result" class="hidden">
+                <!-- Table will be injected here by JavaScript -->
+            </div>
+        </div>
+    </div>
+</body>
 </html>
