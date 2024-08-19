@@ -1,17 +1,3 @@
-fastapi
-uvicorn
-pillow
-opencv-python-headless
-numpy
-pytesseract
-SQLAlchemy
-psycopg2
-psycopg2-binary
-jinja2
-python-multipart
-
-
-
 fastapi==0.95.2
 uvicorn==0.22.0
 paddlepaddle==2.6.2
