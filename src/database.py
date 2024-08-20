@@ -8,7 +8,7 @@ password = '12345'
 
 encoded_password = urllib.parse.quote_plus(password)
 
-SQLALCHEMY_DATABASE_URL = f"postgresql://postgres:{encoded_password}@192.168.0.124:5432/demo_task"
+SQLALCHEMY_DATABASE_URL = f"postgresql://postgres:{encoded_password}@<your Ip Address>:5432/demo_task"
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
